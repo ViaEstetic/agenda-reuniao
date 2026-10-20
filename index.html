@@ -4,31 +4,54 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Agenda da Sala de Reunião</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topo">
-    <h1>Agenda da Sala de Reunião</h1>
-    <button id="btnNova" class="btn primario" type="button">+ Nova reserva</button>
+    <div class="topo-conteudo">
+      <div class="marca">
+        <picture>
+          <source srcset="logo-escuro.png" media="(prefers-color-scheme: dark)">
+          <img src="logo.png" alt="Viaestetic" class="logo">
+        </picture>
+        <div class="marca-texto">
+          <h1>Agenda da Sala de Reunião</h1>
+          <p>Reserve o horário antes de usar a sala</p>
+        </div>
+      </div>
+      <button id="btnNova" class="btn primario" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nova reserva
+      </button>
+    </div>
   </header>
 
-  <div id="avisoLocal" class="aviso" hidden>
-    <strong>Modo demonstração:</strong> as reservas ficam salvas só neste navegador.
-    Configure o Firebase em <code>config.js</code> para que todos vejam a mesma agenda (veja o README).
-  </div>
-
-  <nav class="semana">
-    <button id="btnAnterior" class="btn" type="button" aria-label="Semana anterior">‹</button>
-    <button id="btnHoje" class="btn" type="button">Hoje</button>
-    <button id="btnProxima" class="btn" type="button" aria-label="Próxima semana">›</button>
-    <span id="tituloSemana" class="titulo-semana"></span>
-  </nav>
-
   <main>
-    <p class="dica">Clique em um horário livre para reservar. Clique em uma reserva para ver detalhes ou cancelar.</p>
-    <div class="grade-wrap">
-      <div id="grade" class="grade"></div>
+    <div id="avisoLocal" class="aviso" hidden>
+      <strong>Modo demonstração:</strong> as reservas ficam salvas só neste navegador.
+      Configure o Firebase em <code>config.js</code> para que todos vejam a mesma agenda (veja o README).
     </div>
+
+    <section class="painel">
+      <nav class="semana">
+        <div class="navegacao">
+          <button id="btnAnterior" class="btn icone" type="button" aria-label="Semana anterior">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button id="btnHoje" class="btn" type="button">Hoje</button>
+          <button id="btnProxima" class="btn icone" type="button" aria-label="Próxima semana">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <span id="tituloSemana" class="titulo-semana"></span>
+        <p class="dica">Clique em um horário livre para reservar</p>
+      </nav>
+      <div class="grade-wrap">
+        <div id="grade" class="grade"></div>
+      </div>
+    </section>
 
     <section class="proximas">
       <h2>Próximas reservas</h2>
@@ -36,44 +59,90 @@
     </section>
   </main>
 
-  <dialog id="dlgReserva">
+  <dialog id="dlgReserva" class="modal">
     <form id="formReserva">
-      <h2>Nova reserva</h2>
-      <label>Seu nome
-        <input name="nome" required maxlength="60" autocomplete="name">
-      </label>
-      <label>Assunto / setor
-        <input name="assunto" maxlength="100" placeholder="Ex.: Reunião comercial">
-      </label>
-      <label>Data
-        <input type="date" name="data" required>
-      </label>
-      <div class="linha">
-        <label>Início
-          <input type="time" name="inicio" step="900" required>
+      <header class="modal-topo">
+        <h2>Nova reserva</h2>
+        <button type="button" class="fechar" data-fechar aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="modal-corpo">
+        <label class="campo">
+          <span>Seu nome</span>
+          <input name="nome" required maxlength="60" autocomplete="name" placeholder="Como você quer aparecer na agenda">
         </label>
-        <label>Fim
-          <input type="time" name="fim" step="900" required>
+        <label class="campo">
+          <span>Assunto / setor</span>
+          <input name="assunto" maxlength="100" placeholder="Ex.: Reunião comercial">
         </label>
+        <div class="linha tres">
+          <label class="campo">
+            <span>Data</span>
+            <input type="date" name="data" required>
+          </label>
+          <label class="campo">
+            <span>Início</span>
+            <input type="time" name="inicio" step="900" required>
+          </label>
+          <label class="campo">
+            <span>Fim</span>
+            <input type="time" name="fim" step="900" required>
+          </label>
+        </div>
+
+        <fieldset class="campo">
+          <legend>Cor do card</legend>
+          <div id="paleta" class="paleta"></div>
+        </fieldset>
+
+        <div class="campo">
+          <span>Prévia</span>
+          <div id="previa" class="previa"><strong></strong><span></span></div>
+        </div>
+
+        <p id="erroForm" class="erro" role="alert" hidden></p>
       </div>
-      <p id="erroForm" class="erro" hidden></p>
-      <div class="acoes">
-        <button type="button" class="btn" data-fechar>Cancelar</button>
+
+      <footer class="modal-acoes">
+        <button type="button" class="btn fantasma" data-fechar>Cancelar</button>
         <button type="submit" class="btn primario">Salvar reserva</button>
-      </div>
+      </footer>
     </form>
   </dialog>
 
-  <dialog id="dlgDetalhe">
-    <div class="detalhe">
+  <dialog id="dlgDetalhe" class="modal">
+    <header id="detCabeca" class="detalhe-cabeca">
+      <button type="button" class="fechar" data-fechar aria-label="Fechar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <span class="etiqueta">Reserva da sala</span>
       <h2 id="detAssunto"></h2>
-      <p><span class="rotulo">Reservado por</span> <span id="detNome"></span></p>
-      <p><span class="rotulo">Quando</span> <span id="detQuando"></span></p>
-      <div class="acoes">
-        <button type="button" class="btn perigo" id="btnExcluir">Cancelar reserva</button>
-        <button type="button" class="btn" data-fechar>Fechar</button>
+    </header>
+
+    <div class="modal-corpo">
+      <div class="info">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <div><span class="rotulo">Reservado por</span><span id="detNome"></span></div>
+      </div>
+      <div class="info">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <div><span class="rotulo">Data</span><span id="detData"></span></div>
+      </div>
+      <div class="info">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div><span class="rotulo">Horário</span><span id="detHorario"></span></div>
       </div>
     </div>
+
+    <footer class="modal-acoes">
+      <button type="button" class="btn perigo" id="btnExcluir">Cancelar reserva</button>
+      <button type="button" class="btn primario" id="btnEditar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>
+        Editar
+      </button>
+    </footer>
   </dialog>
 
   <script type="module" src="app.js"></script>

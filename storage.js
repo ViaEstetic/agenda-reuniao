@@ -30,6 +30,7 @@ async function storeFirebase(aoMudar) {
   return {
     modo: 'firebase',
     adicionar: reserva => fs.addDoc(col, reserva),
+    atualizar: (id, dados) => fs.updateDoc(fs.doc(db, COLECAO, id), dados),
     remover: id => fs.deleteDoc(fs.doc(db, COLECAO, id)),
   };
 }
@@ -59,6 +60,7 @@ function storeLocal(aoMudar) {
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
       gravar([...ler(), { id, ...reserva }]);
     },
+    atualizar: async (id, dados) => gravar(ler().map(r => (r.id === id ? { ...r, ...dados } : r))),
     remover: async id => gravar(ler().filter(r => r.id !== id)),
   };
 }
