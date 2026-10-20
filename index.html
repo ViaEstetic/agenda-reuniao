@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda da Sala de Reunião</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <h1>Agenda da Sala de Reunião</h1>
+    <button id="btnNova" class="btn primario" type="button">+ Nova reserva</button>
+  </header>
+
+  <div id="avisoLocal" class="aviso" hidden>
+    <strong>Modo demonstração:</strong> as reservas ficam salvas só neste navegador.
+    Configure o Firebase em <code>config.js</code> para que todos vejam a mesma agenda (veja o README).
+  </div>
+
+  <nav class="semana">
+    <button id="btnAnterior" class="btn" type="button" aria-label="Semana anterior">‹</button>
+    <button id="btnHoje" class="btn" type="button">Hoje</button>
+    <button id="btnProxima" class="btn" type="button" aria-label="Próxima semana">›</button>
+    <span id="tituloSemana" class="titulo-semana"></span>
+  </nav>
+
+  <main>
+    <p class="dica">Clique em um horário livre para reservar. Clique em uma reserva para ver detalhes ou cancelar.</p>
+    <div class="grade-wrap">
+      <div id="grade" class="grade"></div>
+    </div>
+
+    <section class="proximas">
+      <h2>Próximas reservas</h2>
+      <ul id="listaProximas"></ul>
+    </section>
+  </main>
+
+  <dialog id="dlgReserva">
+    <form id="formReserva">
+      <h2>Nova reserva</h2>
+      <label>Seu nome
+        <input name="nome" required maxlength="60" autocomplete="name">
+      </label>
+      <label>Assunto / setor
+        <input name="assunto" maxlength="100" placeholder="Ex.: Reunião comercial">
+      </label>
+      <label>Data
+        <input type="date" name="data" required>
+      </label>
+      <div class="linha">
+        <label>Início
+          <input type="time" name="inicio" step="900" required>
+        </label>
+        <label>Fim
+          <input type="time" name="fim" step="900" required>
+        </label>
+      </div>
+      <p id="erroForm" class="erro" hidden></p>
+      <div class="acoes">
+        <button type="button" class="btn" data-fechar>Cancelar</button>
+        <button type="submit" class="btn primario">Salvar reserva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgDetalhe">
+    <div class="detalhe">
+      <h2 id="detAssunto"></h2>
+      <p><span class="rotulo">Reservado por</span> <span id="detNome"></span></p>
+      <p><span class="rotulo">Quando</span> <span id="detQuando"></span></p>
+      <div class="acoes">
+        <button type="button" class="btn perigo" id="btnExcluir">Cancelar reserva</button>
+        <button type="button" class="btn" data-fechar>Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
