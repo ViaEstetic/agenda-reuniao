@@ -34,36 +34,56 @@
     .qr { width: 125mm; height: 125mm; }
     .passos { font-size: 14pt; color: #4a5263; margin: 0; padding: 0; list-style: none; line-height: 1.7; }
     .link { font-size: 12pt; color: #2f6fde; word-break: break-all; }
-    .imprimir {
+    .barra {
       position: fixed; top: 16px; right: 16px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .barra a {
+      font-size: .9rem; color: #0b74b8; text-decoration: none;
+      padding: 9px 12px; border-radius: 8px; background: #fff; border: 1px solid #d5dbe3;
+    }
+    .imprimir {
       font: inherit; font-weight: 600; padding: 10px 18px; border: 0; border-radius: 8px;
-      background: #2f6fde; color: #fff; cursor: pointer;
+      background: #0b74b8; color: #fff; cursor: pointer;
     }
     @media print {
       body { background: #fff; }
       .folha { margin: 0; }
-      .imprimir { display: none; }
+      .barra { display: none; }
     }
     @media (max-width: 220mm) {
       .folha { width: auto; min-height: 0; margin: 0; padding: 24px 16px; }
       .qr { width: min(125mm, 80vw); height: auto; }
-      .imprimir { position: static; margin: 16px; }
+      .barra { position: static; margin: 16px; }
     }
   </style>
 </head>
 <body>
-  <button class="imprimir" type="button" onclick="print()">Imprimir</button>
+  <div class="barra">
+    <a href="?espaco=sala">Cartaz da Sala de Reunião</a>
+    <a href="?espaco=instituto">Cartaz do Instituto</a>
+    <button class="imprimir" type="button" onclick="print()">Imprimir</button>
+  </div>
   <div class="folha">
     <img class="logo" src="logo.png" alt="Viaestetic">
-    <h1>Sala de Reunião</h1>
-    <p class="sub">Antes de usar a sala, confira a agenda e faça sua reserva.</p>
-    <img class="qr" src="qrcode.svg" alt="QR Code para a agenda da sala de reunião">
+    <h1 id="titulo">Sala de Reunião</h1>
+    <p class="sub" id="sub">Antes de usar o espaço, confira a agenda e faça sua reserva.</p>
+    <img class="qr" id="qr" src="qrcode.svg" alt="QR Code para a agenda">
     <ul class="passos">
       <li>1. Aponte a câmera do celular para o código</li>
-      <li>2. Escolha o dia e o horário livre</li>
+      <li>2. Escolha o espaço, o dia e o horário livre</li>
       <li>3. Informe seu nome e salve</li>
     </ul>
-    <p class="link">viaestetic.github.io/agenda-reuniao</p>
+    <p class="link" id="link">viaestetic.github.io/agenda-reuniao</p>
   </div>
+  <script>
+    // Muda só o título do cartaz (para colar na porta de cada espaço).
+    // O QR Code é o mesmo: abre a agenda, onde a pessoa escolhe o espaço.
+    const TITULOS = { sala: 'Sala de Reunião', instituto: 'Instituto' };
+    const id = new URLSearchParams(location.search).get('espaco');
+    const titulo = TITULOS[id] || TITULOS.sala;
+    document.getElementById('titulo').textContent = titulo;
+    document.title = `Cartaz – ${titulo}`;
+  </script>
 </body>
 </html>

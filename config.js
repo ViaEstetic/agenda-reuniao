@@ -7,6 +7,13 @@ export const AGENDA = {
   mostrarFimDeSemana: false,
 };
 
+// Espaços que podem ser reservados. O `id` é gravado em cada reserva e
+// também é usado no link (ex.: ...?espaco=instituto) — não mude depois de usar.
+export const ESPACOS = [
+  { id: 'sala', nome: 'Sala de Reunião' },
+  { id: 'instituto', nome: 'Instituto' },
+];
+
 // Para que TODOS vejam as mesmas reservas, cole aqui a configuração do seu
 // projeto Firebase (passo a passo no README.md). Enquanto estiver `null`, a
 // agenda funciona em "modo demonstração", salvando apenas neste navegador.

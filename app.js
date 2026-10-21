@@ -1,4 +1,4 @@
-import { AGENDA } from './config.js';
+import { AGENDA, ESPACOS } from './config.js';
 import { criarStore } from './storage.js';
 
 const SLOT_MIN = 30;   // cada linha da grade = 30 minutos
@@ -6,6 +6,7 @@ const SLOT_PX = 28;    // altura de cada linha em pixels
 const NOMES_DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const CHAVE_NOME = 'agenda-sala-meu-nome';
 const CHAVE_COR = 'agenda-sala-minha-cor';
+const CHAVE_ESPACO = 'agenda-sala-espaco';
 // Cores disponíveis para o card (matiz HSL).
 const CORES = [
   { h: 325, nome: 'Magenta' },
@@ -60,6 +61,21 @@ function diaDaSemana(data) {
   const [y, m, d] = data.split('-').map(Number);
   return new Date(y, m - 1, d).getDay();
 }
+// Reservas antigas (de antes de existir o Instituto) são da sala de reunião.
+const espacoDe = r => r.espaco || ESPACOS[0].id;
+const nomeEspaco = id => (ESPACOS.find(e => e.id === id) || ESPACOS[0]).nome;
+const ehEspaco = id => ESPACOS.some(e => e.id === id);
+
+// Espaço exibido: o do link (?espaco=instituto), senão o último visto, senão o primeiro.
+function espacoInicial() {
+  const doLink = new URLSearchParams(location.search).get('espaco');
+  if (ehEspaco(doLink)) return doLink;
+  try {
+    const salvo = localStorage.getItem(CHAVE_ESPACO);
+    if (ehEspaco(salvo)) return salvo;
+  } catch { /* ignora */ }
+  return ESPACOS[0].id;
+}
 function lerNomeSalvo() {
   try { return localStorage.getItem(CHAVE_NOME) || ''; } catch { return ''; }
 }
@@ -69,9 +85,44 @@ function salvarNome(nome) {
 
 let reservas = [];
 let inicioSemana = segundaDaSemana(new Date());
+let espacoAtual = espacoInicial();
 let reservaAberta = null;
 let editandoId = null;   // id da reserva sendo editada (null = nova reserva)
 let store;
+
+const reservasDoEspaco = () => reservas.filter(r => espacoDe(r) === espacoAtual);
+
+/* ---------- Seletor de espaço ---------- */
+
+const abas = $('#abasEspaco');
+for (const e of ESPACOS) {
+  const b = el('button', 'aba', e.nome);
+  b.type = 'button';
+  b.role = 'tab';
+  b.dataset.espaco = e.id;
+  b.addEventListener('click', () => trocarEspaco(e.id));
+  abas.append(b);
+}
+
+function trocarEspaco(id) {
+  espacoAtual = id;
+  try { localStorage.setItem(CHAVE_ESPACO, id); } catch { /* ignora */ }
+  // Mantém o endereço com o espaço, para poder compartilhar o link certo.
+  const url = new URL(location.href);
+  url.searchParams.set('espaco', id);
+  history.replaceState(null, '', url);
+  render();
+}
+
+function renderEspaco() {
+  for (const b of abas.children) {
+    const ativo = b.dataset.espaco === espacoAtual;
+    b.classList.toggle('ativa', ativo);
+    b.setAttribute('aria-selected', ativo);
+  }
+  $('#nomeEspaco').textContent = nomeEspaco(espacoAtual);
+  document.title = `Agenda · ${nomeEspaco(espacoAtual)}`;
+}
 
 /* ---------- Grade semanal ---------- */
 
@@ -119,7 +170,7 @@ function renderGrade() {
       abrirNova(ds, min);
     });
 
-    for (const r of reservas.filter(r => r.data === ds)) {
+    for (const r of reservasDoEspaco().filter(r => r.data === ds)) {
       const ini = Math.max(paraMin(r.inicio), minInicio);
       const fim = Math.min(paraMin(r.fim), minFim);
       if (fim <= ini) continue;
@@ -151,7 +202,7 @@ function renderGrade() {
 function renderProximas() {
   const hoje = fmtData(new Date());
   const agora = deMin(minAgora());
-  const proximas = reservas
+  const proximas = reservasDoEspaco()
     .filter(r => r.data > hoje || (r.data === hoje && r.fim > agora))
     .sort((a, b) => (a.data + a.inicio).localeCompare(b.data + b.inicio))
     .slice(0, 15);
@@ -181,6 +232,7 @@ function renderProximas() {
 }
 
 function render() {
+  renderEspaco();
   renderGrade();
   renderProximas();
 }
@@ -191,6 +243,12 @@ const dlgReserva = $('#dlgReserva');
 const form = $('#formReserva');
 const erroForm = $('#erroForm');
 const paleta = $('#paleta');
+
+for (const e of ESPACOS) {
+  const opcao = el('option', null, e.nome);
+  opcao.value = e.id;
+  form.espaco.append(opcao);
+}
 
 for (const c of CORES) {
   const rotulo = el('label', 'cor');
@@ -220,6 +278,7 @@ function abrirNova(data = fmtData(new Date()), minIni = null) {
   }
   prepararForm(null, 'Nova reserva', 'Salvar reserva');
   form.nome.value = lerNomeSalvo();
+  form.espaco.value = espacoAtual;
   form.data.value = data;
   form.inicio.value = deMin(minIni);
   form.fim.value = deMin(Math.min(minIni + 60, AGENDA.horaFim * 60));
@@ -232,6 +291,7 @@ function abrirNova(data = fmtData(new Date()), minIni = null) {
 function abrirEdicao(r) {
   prepararForm(r.id, 'Editar reserva', 'Salvar alterações');
   form.nome.value = r.nome;
+  form.espaco.value = espacoDe(r);
   form.assunto.value = r.assunto || '';
   form.data.value = r.data;
   form.inicio.value = r.inicio;
@@ -258,18 +318,20 @@ function validar(r) {
   if (!r.nome) return 'Informe seu nome.';
   if (fim <= ini) return 'O horário de fim deve ser depois do início.';
   if (ini < AGENDA.horaInicio * 60 || fim > AGENDA.horaFim * 60)
-    return `A sala pode ser reservada entre ${pad(AGENDA.horaInicio)}:00 e ${pad(AGENDA.horaFim)}:00.`;
+    return `O espaço pode ser reservado entre ${pad(AGENDA.horaInicio)}:00 e ${pad(AGENDA.horaFim)}:00.`;
   if (r.data < hoje || (r.data === hoje && fim <= minAgora())) return 'Esse horário já passou.';
   const conflito = reservas.find(o =>
-    o.id !== editandoId && o.data === r.data && ini < paraMin(o.fim) && fim > paraMin(o.inicio));
+    o.id !== editandoId && espacoDe(o) === r.espaco && o.data === r.data &&
+    ini < paraMin(o.fim) && fim > paraMin(o.inicio));
   if (conflito)
-    return `Conflito: a sala já está reservada das ${conflito.inicio} às ${conflito.fim} por ${conflito.nome}.`;
+    return `Conflito: já existe uma reserva de ${conflito.nome} das ${conflito.inicio} às ${conflito.fim} (${nomeEspaco(r.espaco)}).`;
   return null;
 }
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   const reserva = {
+    espaco: form.espaco.value,
     nome: form.nome.value.trim(),
     assunto: form.assunto.value.trim(),
     data: form.data.value,
@@ -294,10 +356,10 @@ form.addEventListener('submit', async e => {
     }
     salvarCor(reserva.cor);
     dlgReserva.close();
-    // Leva a grade para a semana da reserva recém-criada.
+    // Leva a grade para o espaço e a semana da reserva salva.
     const [y, m, d] = reserva.data.split('-').map(Number);
     inicioSemana = segundaDaSemana(new Date(y, m - 1, d));
-    render();
+    trocarEspaco(reserva.espaco);
   } catch (err) {
     console.error(err);
     erroForm.textContent = 'Não foi possível salvar. Tente novamente.';
@@ -320,6 +382,7 @@ function abrirDetalhe(r) {
   $('#detCabeca').style.setProperty('--h', corDe(r));
   $('#detAssunto').textContent = r.assunto || 'Reunião';
   $('#detNome').textContent = r.nome;
+  $('#detEspaco').textContent = nomeEspaco(espacoDe(r));
   $('#detData').textContent = `${NOMES_DIAS_LONGOS[diaDaSemana(r.data)]}, ${dataBR(r.data)}`;
   $('#detHorario').textContent = `${r.inicio} às ${r.fim} (${textoDuracao})`;
   dlgDetalhe.showModal();
@@ -333,7 +396,7 @@ $('#btnEditar').addEventListener('click', () => {
 $('#btnExcluir').addEventListener('click', async () => {
   const r = reservaAberta;
   if (!r) return;
-  if (!confirm(`Cancelar a reserva de ${r.nome} em ${dataBR(r.data)} (${r.inicio}–${r.fim})?`)) return;
+  if (!confirm(`Cancelar a reserva de ${r.nome} (${nomeEspaco(espacoDe(r))}) em ${dataBR(r.data)} (${r.inicio}–${r.fim})?`)) return;
   try {
     await store.remover(r.id);
     dlgDetalhe.close();

@@ -151,6 +151,36 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 24px 48px; }
   .aviso { background: #2e2710; color: #f2d98c; border-color: #5c4a14; }
 }
 
+/* ---------- Abas de espaço ---------- */
+.abas {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+  max-width: 100%;
+  overflow-x: auto;
+}
+.aba {
+  font: inherit;
+  font-weight: 600;
+  font-size: .95rem;
+  padding: 9px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--suave);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.aba:hover { color: var(--texto); background: var(--linha-fraca); }
+.aba.ativa { background: var(--primaria); color: var(--primaria-texto); }
+.aba:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--foco); }
+
 /* ---------- Painel da semana ---------- */
 .painel {
   background: var(--painel);
@@ -168,6 +198,8 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 24px 48px; }
   border-bottom: 1px solid var(--linha);
 }
 .navegacao { display: flex; gap: 6px; }
+.titulos { display: grid; line-height: 1.25; }
+.nome-espaco { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--primaria); }
 .titulo-semana { font-weight: 650; font-size: 1.05rem; }
 .dica { margin: 0 0 0 auto; color: var(--suave); font-size: .85rem; }
 
@@ -388,7 +420,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 24px 48px; }
   margin-bottom: 6px;
 }
 .campo > span { margin-bottom: 0; }
-input {
+input, select {
   font: inherit;
   width: 100%;
   min-width: 0;
@@ -400,7 +432,8 @@ input {
   transition: border-color .15s, box-shadow .15s;
 }
 input::placeholder { color: var(--suave); opacity: .7; }
-input:focus { outline: none; border-color: var(--primaria); box-shadow: 0 0 0 3px var(--foco); }
+select { cursor: pointer; }
+input:focus, select:focus { outline: none; border-color: var(--primaria); box-shadow: 0 0 0 3px var(--foco); }
 .linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .linha.tres { grid-template-columns: 1.4fr 1fr 1fr; }
 
@@ -484,6 +517,8 @@ input:focus { outline: none; border-color: var(--primaria); box-shadow: 0 0 0 3p
   .topo-conteudo > .btn { width: 100%; }
   main { padding: 16px 16px 32px; }
   .dica { margin-left: 0; flex-basis: 100%; }
+  .abas { display: flex; }
+  .aba { flex: 1; padding: 9px 12px; }
   .linha.tres { grid-template-columns: 1fr 1fr; }
   .linha.tres .campo:first-child { grid-column: 1 / -1; }
 }

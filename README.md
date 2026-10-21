@@ -1,7 +1,7 @@
-# Agenda da Sala de Reunião
+# Agenda de Espaços (Sala de Reunião e Instituto)
 
-Site simples (HTML + CSS + JavaScript, sem build) para reservar a sala de reunião:
-cada pessoa informa **nome, assunto, data e horário**, e todos veem a ocupação da
+Site simples (HTML + CSS + JavaScript, sem build) para reservar a **Sala de Reunião**
+e o **Instituto (auditório)**. Abas no topo escolhem qual agenda ver; cada pessoa informa **nome, assunto, data e horário**, e todos veem a ocupação da
 semana. O sistema bloqueia reservas em horários que se sobrepõem.
 
 ## Arquivos
@@ -36,13 +36,14 @@ salvando só no navegador de quem usa.
    service cloud.firestore {
      match /databases/{database}/documents {
        function valida(d) {
-         return d.keys().hasOnly(['nome','assunto','data','inicio','fim','cor','criadoEm','editadoEm'])
+         return d.keys().hasOnly(['espaco','nome','assunto','data','inicio','fim','cor','criadoEm','editadoEm'])
            && d.nome is string && d.nome.size() > 0 && d.nome.size() <= 60
            && d.assunto is string && d.assunto.size() <= 100
            && d.data.matches('^\\d{4}-\\d{2}-\\d{2}$')
            && d.inicio.matches('^\\d{2}:\\d{2}$')
            && d.fim.matches('^\\d{2}:\\d{2}$')
-           && (!('cor' in d) || (d.cor is int && d.cor >= 0 && d.cor < 360));
+           && (!('cor' in d) || (d.cor is int && d.cor >= 0 && d.cor < 360))
+           && (!('espaco' in d) || d.espaco in ['sala', 'instituto']);
        }
        match /reservas/{id} {
          allow read, delete: if true;
@@ -95,6 +96,17 @@ Em `config.js`:
 
 - `horaInicio` / `horaFim` — faixa de horário exibida e permitida para reservas.
 - `mostrarFimDeSemana` — `true` para exibir sábado e domingo.
+- `ESPACOS` — lista de espaços reserváveis. Para incluir um novo, adicione-o aqui
+  **e** na regra do Firestore (`d.espaco in [...]`).
+
+## QR Code, cartazes e links diretos
+
+- `qrcode.svg` / `qrcode.png`: **um único QR Code** para os dois espaços. Ele abre a
+  agenda, e a pessoa escolhe a Sala ou o Instituto nas abas.
+- `cartaz.html?espaco=sala` e `cartaz.html?espaco=instituto`: cartaz A4 com o título de
+  cada espaço (para colar na porta), ambos com o mesmo QR Code.
+- `.../agenda-reuniao/?espaco=instituto` abre direto na agenda do Instituto (útil para
+  mandar por mensagem).
 
 ## Observações
 

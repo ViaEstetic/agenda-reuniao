@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Agenda da Sala de Reunião</title>
+  <title>Agenda de Espaços</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
@@ -17,8 +17,8 @@
           <img src="logo.png" alt="Viaestetic" class="logo">
         </picture>
         <div class="marca-texto">
-          <h1>Agenda da Sala de Reunião</h1>
-          <p>Reserve o horário antes de usar a sala</p>
+          <h1>Agenda de Espaços</h1>
+          <p>Reserve o horário antes de usar a Sala de Reunião ou o Instituto</p>
         </div>
       </div>
       <button id="btnNova" class="btn primario" type="button">
@@ -34,6 +34,8 @@
       Configure o Firebase em <code>config.js</code> para que todos vejam a mesma agenda (veja o README).
     </div>
 
+    <div id="abasEspaco" class="abas" role="tablist" aria-label="Escolha o espaço"></div>
+
     <section class="painel">
       <nav class="semana">
         <div class="navegacao">
@@ -45,7 +47,10 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
-        <span id="tituloSemana" class="titulo-semana"></span>
+        <div class="titulos">
+          <span id="nomeEspaco" class="nome-espaco"></span>
+          <span id="tituloSemana" class="titulo-semana"></span>
+        </div>
         <p class="dica">Clique em um horário livre para reservar</p>
       </nav>
       <div class="grade-wrap">
@@ -69,6 +74,10 @@
       </header>
 
       <div class="modal-corpo">
+        <label class="campo">
+          <span>Espaço</span>
+          <select name="espaco" required></select>
+        </label>
         <label class="campo">
           <span>Seu nome</span>
           <input name="nome" required maxlength="60" autocomplete="name" placeholder="Como você quer aparecer na agenda">
@@ -117,11 +126,15 @@
       <button type="button" class="fechar" data-fechar aria-label="Fechar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
-      <span class="etiqueta">Reserva da sala</span>
+      <span class="etiqueta">Reserva</span>
       <h2 id="detAssunto"></h2>
     </header>
 
     <div class="modal-corpo">
+      <div class="info">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <div><span class="rotulo">Espaço</span><span id="detEspaco"></span></div>
+      </div>
       <div class="info">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
         <div><span class="rotulo">Reservado por</span><span id="detNome"></span></div>
