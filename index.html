@@ -6,7 +6,7 @@
   <title>Agenda de Espaços</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261028">
 </head>
 <body>
   <header class="topo">
@@ -63,6 +63,13 @@
       <ul id="listaProximas"></ul>
     </section>
   </main>
+
+  <footer class="rodape">
+    <a href="cartaz.html">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 20h4v-3"/></svg>
+      Imprimir QR Code da agenda
+    </a>
+  </footer>
 
   <dialog id="dlgReserva" class="modal">
     <form id="formReserva">
@@ -151,13 +158,69 @@
 
     <footer class="modal-acoes">
       <button type="button" class="btn perigo" id="btnExcluir">Cancelar reserva</button>
-      <button type="button" class="btn primario" id="btnEditar">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>
-        Editar
-      </button>
+      <div class="acoes-direita">
+        <button type="button" class="btn" id="btnEditar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>
+          Editar
+        </button>
+        <button type="button" class="btn primario" id="btnConvidar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Convidar
+        </button>
+      </div>
     </footer>
   </dialog>
 
-  <script type="module" src="app.js"></script>
+  <dialog id="dlgConvite" class="modal">
+    <header class="modal-topo">
+      <h2>Convidar participantes</h2>
+      <button type="button" class="fechar" data-fechar aria-label="Fechar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+
+    <div class="modal-corpo">
+      <div id="convResumo" class="previa"><strong></strong><span></span></div>
+
+      <div class="campo">
+        <span>Enviar por</span>
+        <div id="convAcoes" class="acoes-convite">
+          <a class="opcao" data-link="whatsapp" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.4 7.9L3 21l1.2-4.4A9 9 0 1 1 21 12z"/><path d="M8.5 9.5c.5 2.5 3 5 5.5 5.5l1.2-1.2 2 1-.6 1.7c-4 .4-9.3-4.9-8.9-8.9l1.7-.6 1 2z"/></svg>
+            <span><strong>WhatsApp</strong><small>Envia o texto do convite</small></span>
+          </a>
+          <a class="opcao" data-link="google" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>
+            <span><strong>Google Agenda</strong><small>Cria o evento para adicionar convidados</small></span>
+          </a>
+          <button type="button" class="opcao" data-acao="copiar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span><strong>Copiar texto</strong><small>Para colar onde quiser</small></span>
+          </button>
+          <button type="button" class="opcao" data-acao="compartilhar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            <span><strong>Compartilhar</strong><small>Outros apps do celular</small></span>
+          </button>
+        </div>
+        <p id="convAviso" class="sucesso" role="status" hidden></p>
+      </div>
+
+      <details class="texto-convite">
+        <summary>Ver texto do convite</summary>
+        <pre id="convTexto"></pre>
+      </details>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
+    <span></span>
+    <button type="button" class="toast-acao"></button>
+    <button type="button" class="fechar" aria-label="Fechar aviso">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <script type="module" src="app.js?v=20261028"></script>
 </body>
 </html>

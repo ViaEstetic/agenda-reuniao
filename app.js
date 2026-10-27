@@ -1,5 +1,5 @@
-import { AGENDA, ESPACOS } from './config.js';
-import { criarStore } from './storage.js';
+import { AGENDA, ESPACOS } from './config.js?v=20261028';
+import { criarStore } from './storage.js?v=20261028';
 
 const SLOT_MIN = 30;   // cada linha da grade = 30 minutos
 const SLOT_PX = 28;    // altura de cada linha em pixels
@@ -76,6 +76,15 @@ function espacoInicial() {
   } catch { /* ignora */ }
   return ESPACOS[0].id;
 }
+// Semana exibida: a da data do link (?data=2026-10-28, usado nos convites), senão a atual.
+function semanaInicial() {
+  const doLink = new URLSearchParams(location.search).get('data');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(doLink || '')) {
+    const [y, m, d] = doLink.split('-').map(Number);
+    return segundaDaSemana(new Date(y, m - 1, d));
+  }
+  return segundaDaSemana(new Date());
+}
 function lerNomeSalvo() {
   try { return localStorage.getItem(CHAVE_NOME) || ''; } catch { return ''; }
 }
@@ -84,7 +93,7 @@ function salvarNome(nome) {
 }
 
 let reservas = [];
-let inicioSemana = segundaDaSemana(new Date());
+let inicioSemana = semanaInicial();
 let espacoAtual = espacoInicial();
 let reservaAberta = null;
 let editandoId = null;   // id da reserva sendo editada (null = nova reserva)
@@ -110,6 +119,7 @@ function trocarEspaco(id) {
   // Mantém o endereço com o espaço, para poder compartilhar o link certo.
   const url = new URL(location.href);
   url.searchParams.set('espaco', id);
+  url.searchParams.delete('data');
   history.replaceState(null, '', url);
   render();
 }
@@ -360,6 +370,7 @@ form.addEventListener('submit', async e => {
     const [y, m, d] = reserva.data.split('-').map(Number);
     inicioSemana = segundaDaSemana(new Date(y, m - 1, d));
     trocarEspaco(reserva.espaco);
+    if (!editandoId) mostrarAviso('Reserva salva!', 'Convidar participantes', () => abrirConvite(reserva));
   } catch (err) {
     console.error(err);
     erroForm.textContent = 'Não foi possível salvar. Tente novamente.';
@@ -388,6 +399,11 @@ function abrirDetalhe(r) {
   dlgDetalhe.showModal();
 }
 
+$('#btnConvidar').addEventListener('click', () => {
+  dlgDetalhe.close();
+  abrirConvite(reservaAberta);
+});
+
 $('#btnEditar').addEventListener('click', () => {
   dlgDetalhe.close();
   abrirEdicao(reservaAberta);
@@ -405,6 +421,114 @@ $('#btnExcluir').addEventListener('click', async () => {
     alert('Não foi possível cancelar. Tente novamente.');
   }
 });
+
+/* ---------- Convite para participantes ---------- */
+
+const NOME_EMPRESA = 'Viaestetic';
+const dlgConvite = $('#dlgConvite');
+let reservaConvite = null;
+
+const dataLonga = data => `${NOMES_DIAS_LONGOS[diaDaSemana(data)]}, ${dataBR(data)}`;
+const localDe = r => `${nomeEspaco(espacoDe(r))} – ${NOME_EMPRESA}`;
+
+// Link que abre a agenda já no espaço e na semana da reunião.
+function linkReserva(r) {
+  const url = new URL(location.pathname, location.origin);
+  url.search = new URLSearchParams({ espaco: espacoDe(r), data: r.data });
+  return url.href;
+}
+
+function textoConvite(r) {
+  return [
+    `Convite: ${r.assunto || 'Reunião'}`,
+    '',
+    `Local: ${localDe(r)}`,
+    `Data: ${dataLonga(r.data)}`,
+    `Horário: ${r.inicio} às ${r.fim}`,
+    `Organizado por: ${r.nome}`,
+    '',
+    `Ver na agenda: ${linkReserva(r)}`,
+  ].join('\n');
+}
+
+function inicioEFim(r) {
+  const [y, m, d] = r.data.split('-').map(Number);
+  const [hi, mi] = r.inicio.split(':').map(Number);
+  const [hf, mf] = r.fim.split(':').map(Number);
+  return [new Date(y, m - 1, d, hi, mi), new Date(y, m - 1, d, hf, mf)];
+}
+const dataUtc = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); // 20261028T180000Z
+function abrirConvite(r) {
+  reservaConvite = r;
+  const resumo = $('#convResumo');
+  resumo.style.setProperty('--h', corDe(r));
+  resumo.querySelector('strong').textContent = r.assunto || 'Reunião';
+  resumo.querySelector('span').textContent =
+    `${nomeEspaco(espacoDe(r))} · ${dataLonga(r.data)} · ${r.inicio}–${r.fim}`;
+  $('#convTexto').textContent = textoConvite(r);
+  $('[data-link=whatsapp]').href = linkWhatsapp(r);
+  $('[data-link=google]').href = linkGoogle(r);
+  $('#convAviso').hidden = true;
+  $('[data-acao=compartilhar]').hidden = !navigator.share;
+  dlgConvite.showModal();
+}
+
+function avisoConvite(texto) {
+  const aviso = $('#convAviso');
+  aviso.textContent = texto;
+  aviso.hidden = false;
+}
+
+// WhatsApp e Google Agenda são links normais (<a>), que navegadores e celulares
+// não bloqueiam como fariam com janelas abertas por código.
+function linkWhatsapp(r) {
+  return `https://wa.me/?text=${encodeURIComponent(textoConvite(r))}`;
+}
+function linkGoogle(r) {
+  const [ini, fim] = inicioEFim(r);
+  const p = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: r.assunto || 'Reunião',
+    dates: `${dataUtc(ini)}/${dataUtc(fim)}`,
+    details: textoConvite(r),
+    location: localDe(r),
+  });
+  return `https://calendar.google.com/calendar/render?${p}`;
+}
+
+const ACOES_CONVITE = {
+  async copiar(r) {
+    try {
+      await navigator.clipboard.writeText(textoConvite(r));
+      avisoConvite('Texto do convite copiado. É só colar na conversa.');
+    } catch {
+      avisoConvite('Não foi possível copiar automaticamente. Selecione o texto abaixo e copie.');
+    }
+  },
+  async compartilhar(r) {
+    try { await navigator.share({ title: r.assunto || 'Reunião', text: textoConvite(r) }); } catch { /* cancelado pela pessoa */ }
+  },
+};
+
+$('#convAcoes').addEventListener('click', e => {
+  const botao = e.target.closest('[data-acao]');
+  if (botao && reservaConvite) ACOES_CONVITE[botao.dataset.acao](reservaConvite);
+});
+
+/* ---------- Aviso rápido (toast) ---------- */
+
+let timerAviso;
+function mostrarAviso(texto, textoAcao, acao) {
+  const toast = $('#toast');
+  toast.querySelector('span').textContent = texto;
+  const botao = toast.querySelector('.toast-acao');
+  botao.textContent = textoAcao;
+  botao.onclick = () => { toast.hidden = true; acao(); };
+  toast.hidden = false;
+  clearTimeout(timerAviso);
+  timerAviso = setTimeout(() => { toast.hidden = true; }, 10_000);
+}
+$('#toast .fechar').addEventListener('click', () => { $('#toast').hidden = true; });
 
 /* ---------- Navegação e inicialização ---------- */
 

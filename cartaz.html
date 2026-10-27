@@ -3,87 +3,292 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cartaz – Agenda da Sala de Reunião</title>
+  <title>QR Codes para impressão – Agenda de Espaços</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <style>
     @page { size: A4; margin: 0; }
+
+    :root {
+      --navy: #0b4466;
+      --rosa: #c94f9f;
+      --lilas: #8b7cc8;
+      --azul: #0088cc;
+      --cinza: #5b6677;
+      --marca: linear-gradient(90deg, var(--rosa), var(--lilas) 50%, var(--azul));
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      color: #1d2330;
-      background: #e9ebef;
+      background: #e9ecf1;
+      color: var(--navy);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-    .folha {
-      width: 210mm;
-      min-height: 297mm;
-      margin: 16px auto;
-      padding: 24mm 20mm;
-      background: #fff;
+
+    /* ---------- Barra de opções (não sai na impressão) ---------- */
+    .barra {
+      position: sticky;
+      top: 0;
+      z-index: 5;
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 12px 24px;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      gap: 10mm;
+      padding: 12px 16px;
+      background: #fff;
+      border-bottom: 1px solid #dde2ea;
+      box-shadow: 0 2px 12px rgb(11 68 102 / .06);
     }
-    .logo { height: 18mm; width: auto; }
-    h1 { font-size: 34pt; margin: 0; line-height: 1.1; }
-    .sub { font-size: 17pt; color: #4a5263; margin: 0; max-width: 150mm; }
-    .qr { width: 125mm; height: 125mm; }
-    .passos { font-size: 14pt; color: #4a5263; margin: 0; padding: 0; list-style: none; line-height: 1.7; }
-    .link { font-size: 12pt; color: #2f6fde; word-break: break-all; }
-    .barra {
-      position: fixed; top: 16px; right: 16px;
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    .grupo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .grupo > span { font-size: .8rem; font-weight: 600; color: var(--cinza); }
+    .seg { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; background: #f0f2f6; border-radius: 10px; }
+    .seg button {
+      font: inherit;
+      font-size: .85rem;
+      font-weight: 600;
+      border: 0;
+      background: transparent;
+      color: var(--cinza);
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .barra a {
-      font-size: .9rem; color: #0b74b8; text-decoration: none;
-      padding: 9px 12px; border-radius: 8px; background: #fff; border: 1px solid #d5dbe3;
-    }
+    .seg button:hover { color: var(--navy); }
+    .seg button.ativo { background: #fff; color: var(--navy); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
     .imprimir {
-      font: inherit; font-weight: 600; padding: 10px 18px; border: 0; border-radius: 8px;
-      background: #0b74b8; color: #fff; cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font: inherit;
+      font-weight: 600;
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 10px;
+      background: #0b74b8;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgb(11 116 184 / .3);
     }
+    .imprimir:hover { background: #095f98; }
+    .imprimir svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .dica { width: 100%; margin: 0; text-align: center; font-size: .8rem; color: var(--cinza); }
+
+    /* ---------- Folha A4 ---------- */
+    .folha {
+      width: min(210mm, calc(100vw - 32px));
+      aspect-ratio: 210 / 297;
+      margin: 24px auto 40px;
+      padding: 4.5%;
+      background: #fff;
+      box-shadow: 0 10px 40px rgb(11 68 102 / .15);
+      display: grid;
+    }
+    .folha[data-layout="1"] { grid-template: 1fr / 1fr; }
+    .folha[data-layout="2"] { grid-template: repeat(2, 1fr) / 1fr; }
+    .folha[data-layout="4"] { grid-template: repeat(2, 1fr) / repeat(2, 1fr); }
+    .folha[data-layout="8"] { grid-template: repeat(4, 1fr) / repeat(2, 1fr); }
+
+    /* ---------- Cartão (se adapta ao próprio tamanho) ---------- */
+    .cartao {
+      container: cartao / size;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+      min-height: 0;
+    }
+    /* Linhas de corte quando há mais de um por folha */
+    .folha:not([data-layout="1"]) .cartao { outline: 1px dashed #c3cad5; outline-offset: -.5px; }
+
+    .faixa {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 1.6cqmin;
+      background: var(--marca);
+    }
+    .bolinhas {
+      position: absolute;
+      right: -14cqmin;
+      bottom: -14cqmin;
+      width: 48cqmin;
+      height: 48cqmin;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgb(139 124 200 / .16) 18%, transparent 19%) 0 0 / 6cqmin 6cqmin;
+      -webkit-mask: radial-gradient(circle, #000 40%, transparent 71%);
+      mask: radial-gradient(circle, #000 40%, transparent 71%);
+      pointer-events: none;
+    }
+
+    .conteudo {
+      position: absolute;
+      inset: 6cqmin 5cqmin 5cqmin;
+      display: grid;
+      grid-template-areas: "logo" "titulo" "sub" "qr" "cta" "url";
+      justify-items: center;
+      align-content: center;
+      gap: 2.6cqmin;
+      text-align: center;
+    }
+    .logo { grid-area: logo; height: 8.5cqmin; width: auto; }
+    .titulo { grid-area: titulo; margin: 0; font-size: 7.6cqmin; line-height: 1.08; letter-spacing: -.02em; font-weight: 750; }
+    .sub { grid-area: sub; margin: 0; font-size: 3.6cqmin; color: var(--cinza); }
+    .chips { display: flex; flex-wrap: wrap; gap: 1.6cqmin; justify-content: inherit; }
+    .chips span {
+      font-weight: 650;
+      padding: .5em 1.1em;
+      border-radius: 999px;
+      color: var(--navy);
+      background: linear-gradient(90deg, rgb(201 79 159 / .12), rgb(0 136 204 / .12));
+      border: 1px solid rgb(139 124 200 / .35);
+    }
+    .qr {
+      grid-area: qr;
+      width: 56cqmin;
+      aspect-ratio: 1;
+      padding: 1.8cqmin;
+      border-radius: 3.5cqmin;
+      background: #fff;
+      border: .5cqmin solid transparent;
+      background-image: linear-gradient(#fff, #fff), var(--marca);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+    }
+    .qr img { display: block; width: 100%; height: 100%; }
+    .cta { grid-area: cta; margin: 0; font-size: 4cqmin; font-weight: 650; display: flex; align-items: center; gap: 1.5cqmin; }
+    .cta svg { width: 1.3em; height: 1.3em; fill: none; stroke: var(--azul); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .url { grid-area: url; margin: 0; font-size: 3cqmin; color: var(--azul); font-weight: 550; }
+
+    /* Cartão "deitado" (2 e 8 por folha): QR à esquerda, texto à direita */
+    @container cartao (aspect-ratio > 1.15) {
+      .conteudo {
+        inset: 7cqh 6cqh 6cqh;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: "qr logo" "qr titulo" "qr sub" "qr cta" "qr url";
+        justify-items: start;
+        align-items: center;
+        column-gap: 6cqh;
+        row-gap: 2.2cqh;
+        text-align: left;
+      }
+      .qr { width: auto; height: min(62cqh, 46cqw); padding: 2.5cqh; border-radius: 5cqh; border-width: .7cqh; }
+      .logo { height: min(9cqh, 6cqw); }
+      .titulo { font-size: min(8.4cqh, 5.6cqw); }
+      .sub { font-size: min(4cqh, 2.7cqw); }
+      .chips { justify-content: flex-start; gap: 1.4cqh; }
+      .cta { font-size: min(4.3cqh, 2.9cqw); gap: 1.6cqh; }
+      .url { font-size: min(3.6cqh, 2.4cqw); }
+      .bolinhas { width: 70cqh; height: 70cqh; right: -20cqh; bottom: -20cqh; background-size: 8cqh 8cqh; }
+    }
+
     @media print {
       body { background: #fff; }
-      .folha { margin: 0; }
       .barra { display: none; }
-    }
-    @media (max-width: 220mm) {
-      .folha { width: auto; min-height: 0; margin: 0; padding: 24px 16px; }
-      .qr { width: min(125mm, 80vw); height: auto; }
-      .barra { position: static; margin: 16px; }
+      .folha { width: 210mm; height: 297mm; margin: 0; box-shadow: none; }
     }
   </style>
 </head>
 <body>
   <div class="barra">
-    <a href="?espaco=sala">Cartaz da Sala de Reunião</a>
-    <a href="?espaco=instituto">Cartaz do Instituto</a>
-    <button class="imprimir" type="button" onclick="print()">Imprimir</button>
+    <div class="grupo">
+      <span>Por folha</span>
+      <div class="seg" id="opLayout">
+        <button type="button" data-v="1">Cartaz</button>
+        <button type="button" data-v="2">2</button>
+        <button type="button" data-v="4">4</button>
+        <button type="button" data-v="8">8 cartões</button>
+      </div>
+    </div>
+    <div class="grupo">
+      <span>Título</span>
+      <div class="seg" id="opTitulo">
+        <button type="button" data-v="geral">Agenda de Espaços</button>
+        <button type="button" data-v="sala">Sala de Reunião</button>
+        <button type="button" data-v="instituto">Instituto</button>
+      </div>
+    </div>
+    <button class="imprimir" type="button" onclick="print()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
+      Imprimir
+    </button>
+    <p class="dica">Papel A4, escala 100% (sem "ajustar à página"). Com mais de um por folha, recorte nas linhas tracejadas.</p>
   </div>
-  <div class="folha">
-    <img class="logo" src="logo.png" alt="Viaestetic">
-    <h1 id="titulo">Sala de Reunião</h1>
-    <p class="sub" id="sub">Antes de usar o espaço, confira a agenda e faça sua reserva.</p>
-    <img class="qr" id="qr" src="qrcode.svg" alt="QR Code para a agenda">
-    <ul class="passos">
-      <li>1. Aponte a câmera do celular para o código</li>
-      <li>2. Escolha o espaço, o dia e o horário livre</li>
-      <li>3. Informe seu nome e salve</li>
-    </ul>
-    <p class="link" id="link">viaestetic.github.io/agenda-reuniao</p>
-  </div>
+
+  <main class="folha" id="folha"></main>
+
+  <template id="modelo">
+    <article class="cartao">
+      <div class="faixa"></div>
+      <div class="bolinhas"></div>
+      <div class="conteudo">
+        <img class="logo" src="logo.png" alt="Viaestetic">
+        <h2 class="titulo"></h2>
+        <div class="sub"></div>
+        <div class="qr"><img src="qrcode.svg" alt="QR Code da agenda"></div>
+        <p class="cta">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
+          Aponte a câmera do celular e reserve
+        </p>
+        <p class="url">viaestetic.github.io/<wbr>agenda-reuniao</p>
+      </div>
+    </article>
+  </template>
+
   <script>
-    // Muda só o título do cartaz (para colar na porta de cada espaço).
-    // O QR Code é o mesmo: abre a agenda, onde a pessoa escolhe o espaço.
-    const TITULOS = { sala: 'Sala de Reunião', instituto: 'Instituto' };
-    const id = new URLSearchParams(location.search).get('espaco');
-    const titulo = TITULOS[id] || TITULOS.sala;
-    document.getElementById('titulo').textContent = titulo;
-    document.title = `Cartaz – ${titulo}`;
+    const TITULOS = {
+      geral: { titulo: 'Agenda de Espaços', chips: ['Sala de Reunião', 'Instituto'] },
+      sala: { titulo: 'Sala de Reunião', sub: 'Confira a agenda e reserve antes de usar' },
+      instituto: { titulo: 'Instituto', sub: 'Confira a agenda e reserve antes de usar' },
+    };
+    const LAYOUTS = ['1', '2', '4', '8'];
+
+    // Opções vêm do link (?layout=4&titulo=sala). O antigo ?espaco=sala abre como cartaz.
+    const params = new URLSearchParams(location.search);
+    const espacoAntigo = params.get('espaco');
+    let layout = LAYOUTS.includes(params.get('layout')) ? params.get('layout') : (espacoAntigo ? '1' : '4');
+    let titulo = TITULOS[params.get('titulo')] ? params.get('titulo') : (TITULOS[espacoAntigo] ? espacoAntigo : 'geral');
+
+    const folha = document.getElementById('folha');
+    const modelo = document.getElementById('modelo');
+
+    function render() {
+      const t = TITULOS[titulo];
+      folha.dataset.layout = layout;
+      folha.replaceChildren();
+      for (let i = 0; i < Number(layout); i++) {
+        const c = modelo.content.cloneNode(true);
+        c.querySelector('.titulo').textContent = t.titulo;
+        const sub = c.querySelector('.sub');
+        if (t.chips) {
+          sub.className += ' chips';
+          for (const nome of t.chips) {
+            const s = document.createElement('span');
+            s.textContent = nome;
+            sub.append(s);
+          }
+        } else {
+          sub.textContent = t.sub;
+        }
+        folha.append(c);
+      }
+      for (const [grupo, valor] of [['opLayout', layout], ['opTitulo', titulo]]) {
+        for (const b of document.getElementById(grupo).children) b.classList.toggle('ativo', b.dataset.v === valor);
+      }
+      const url = new URL(location.href);
+      url.search = new URLSearchParams({ layout, titulo });
+      history.replaceState(null, '', url);
+    }
+
+    document.getElementById('opLayout').addEventListener('click', e => {
+      if (e.target.dataset.v) { layout = e.target.dataset.v; render(); }
+    });
+    document.getElementById('opTitulo').addEventListener('click', e => {
+      if (e.target.dataset.v) { titulo = e.target.dataset.v; render(); }
+    });
+    render();
   </script>
 </body>
 </html>

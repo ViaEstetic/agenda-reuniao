@@ -1,4 +1,4 @@
-import { firebaseConfig } from './config.js';
+import { firebaseConfig } from './config.js?v=20261028';
 
 const FIREBASE_VERSAO = '10.12.2';
 const COLECAO = 'reservas';

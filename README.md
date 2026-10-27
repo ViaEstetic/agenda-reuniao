@@ -103,10 +103,18 @@ Em `config.js`:
 
 - `qrcode.svg` / `qrcode.png`: **um único QR Code** para os dois espaços. Ele abre a
   agenda, e a pessoa escolhe a Sala ou o Instituto nas abas.
-- `cartaz.html?espaco=sala` e `cartaz.html?espaco=instituto`: cartaz A4 com o título de
-  cada espaço (para colar na porta), ambos com o mesmo QR Code.
+- `cartaz.html`: página de impressão (A4) dos QR Codes. Escolha quantos por folha
+  (cartaz, 2, 4 ou 8 cartões com linhas de corte) e o título (Agenda de Espaços,
+  Sala de Reunião ou Instituto). O link do rodapé do site leva até ela.
 - `.../agenda-reuniao/?espaco=instituto` abre direto na agenda do Instituto (útil para
   mandar por mensagem).
+
+## Ao publicar uma atualização
+
+Os arquivos são carregados com um número de versão (`?v=20261028`) em `index.html`,
+`app.js` e `storage.js`. Ao alterar o código, troque esse número **nos três arquivos**
+(por exemplo, pela data do dia) e envie **todos os arquivos alterados juntos**.
+Assim o navegador de todo mundo baixa a versão nova inteira, sem misturar com a antiga.
 
 ## Observações
 
